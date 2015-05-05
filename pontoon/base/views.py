@@ -2,15 +2,13 @@ import base64
 import datetime
 import hashlib
 import json
-import Levenshtein
 import logging
 import math
 import os
-import pytz
-import requests
 import traceback
 import xml.etree.ElementTree as ET
 import urllib
+from operator import itemgetter
 
 from django.conf import settings
 from django.contrib import messages
@@ -20,7 +18,6 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.db.models import Count
-
 from django.http import (
     Http404,
     HttpResponse,
@@ -28,16 +25,20 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
 )
-
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.templatetags.static import static
 from django.utils.datastructures import MultiValueDictKeyError
+
+import Levenshtein
+import pytz
+import requests
 from django_browserid.views import Verify as BrowserIDVerifyBase
-from operator import itemgetter
+from session_csrf import anonymous_csrf_exempt
+from suds.client import Client, WebFault
+
 from pontoon.administration.vcs import commit_to_vcs
 from pontoon.administration import files
 from pontoon.base import utils
-
 from pontoon.base.models import (
     Entity,
     Locale,
@@ -54,9 +55,6 @@ from pontoon.base.models import (
     unapprove,
     unfuzzy,
 )
-
-from session_csrf import anonymous_csrf_exempt
-from suds.client import Client, WebFault
 
 
 log = logging.getLogger('pontoon')
@@ -165,52 +163,11 @@ def get_gravatar_url(email, size):
 
 def translate(request, locale, slug, part=None, template='translate.html'):
     """Translate view."""
-    log.debug("Translate view.")
-
-    invalid_locale = invalid_project = False
-
-    # Validate locale
-    try:
-        l = Locale.objects.get(code=locale)
-    except Locale.DoesNotExist:
-        invalid_locale = True
-
-    # Validate project
-    try:
-        p = Project.objects.get(
-            disabled=False,
-            slug=slug, pk__in=Resource.objects.values('project'))
-    except Project.DoesNotExist:
-        invalid_project = True
-
-    if invalid_locale:
-        if invalid_project:
-            raise Http404
-        else:
-            messages.error(request, "Oops, locale is not supported.")
-            request.session['translate_error'] = {
-                'none': None,
-            }
-            return HttpResponseRedirect(reverse('pontoon.home'))
-
-    if invalid_project:
-        messages.error(request, "Oops, project could not be found.")
-        request.session['translate_error'] = {
-            'none': None,
-        }
-        return HttpResponseRedirect(reverse('pontoon.home'))
-
-    # Validate project locales
-    if p.locales.filter(code=locale).count() == 0:
-        request.session['translate_error'] = {
-            'none': None,
-        }
-        messages.error(
-            request, "Oops, locale is not supported for this project.")
-        return HttpResponseRedirect(reverse('pontoon.home'))
+    project = get_object_or_404(Project.objects.available(), slug=slug)
+    locale = get_object_or_404(project.locales, code=locale)
 
     # Check if user authenticated
-    if not p.pk == 1:
+    if not project.pk == 1:
         if not request.user.is_authenticated():
             messages.error(request, "You need to sign in first.")
             request.session['translate_error'] = {
@@ -219,10 +176,7 @@ def translate(request, locale, slug, part=None, template='translate.html'):
             return HttpResponseRedirect(reverse('pontoon.home'))
 
     # Set project details (locales and pages or paths + stats)
-    projects = Project.objects.filter(
-        disabled=False, pk__in=Resource.objects.values('project')) \
-        .order_by("name")
-
+    projects = Project.objects.available().order_by("name")
     for project in projects:
         pages = Subpage.objects.filter(project=project)
         r = Entity.objects.filter(obsolete=False).values('resource')
@@ -250,10 +204,10 @@ def translate(request, locale, slug, part=None, template='translate.html'):
     data = {
         'accept_language': utils.get_project_locale_from_request(
             request, Locale.objects),
-        'locale': l,
+        'locale': locale,
         'locales': Locale.objects.all(),
-        'page_url': p.url,
-        'project': p,
+        'page_url': project.url,
+        'project': project,
         'projects': projects,
     }
 

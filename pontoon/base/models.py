@@ -43,11 +43,16 @@ class Locale(models.Model):
         })
 
 
-class Project(models.Model):
-    name = models.CharField(max_length=128, unique=True)
-    slug = models.SlugField(unique=True)
-    locales = models.ManyToManyField(Locale)
+class ProjectQuerySet(models.QuerySet):
+    def available(self):
+        """
+        Available projects are not disabled and have at least one
+        resource defined.
+        """
+        return self.filter(disabled=False, resource_set__isnull=False)
 
+
+class Project(models.Model):
     # Repositories
     REPOSITORY_TYPE_CHOICES = (
         ('file', 'File'),
@@ -56,6 +61,10 @@ class Project(models.Model):
         ('svn', 'SVN'),
         ('transifex', 'Transifex'),
     )
+
+    name = models.CharField(max_length=128, unique=True)
+    slug = models.SlugField(unique=True)
+    locales = models.ManyToManyField(Locale)
 
     repository_type = models.CharField(
         "Type", max_length=20, blank=False, default='File',
@@ -86,11 +95,18 @@ class Project(models.Model):
     # Disable project instead of deleting to keep translation memory & stats
     disabled = models.BooleanField(default=False)
 
+    objects = ProjectQuerySet.as_manager()
+
     class Meta:
         permissions = (
             ("can_manage", "Can manage projects"),
             ("can_localize", "Can localize projects"),
         )
+
+    def save(self, *args, **kwargs):
+        # Projects without any defined resources are considered
+
+        super(Project, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return self.name

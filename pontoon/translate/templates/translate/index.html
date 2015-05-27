@@ -6,19 +6,8 @@
 <!-- Server data -->
 <div id="server"
      class="hidden"
-     {% if accept_language %}data-accept-language="{{ accept_language }}"{% endif %}
-     {% if csrf_token %}data-csrf="{{ csrf_token }}"{% endif %}
-     {% if locale %}data-locale="{{ locale.stringify() }}"{% endif %}
-     {% if page_url %}data-url="{{ page_url }}"{% endif %}
-     {% if project.id %}data-id="{{ project.id }}"{% endif %}
-     {% if project.width %}data-width="{{ project.width }}"{% endif %}
-     {% if project.links %}data-links="{{ project.links|lower }}"{% endif %}
-     {% if redirect %}data-redirect="{{ redirect }}"{% endif %}
-     {% if user.email %}data-email="{{ user.email }}"{% endif %}
-     {% if user.first_name %}data-name="{{ user.first_name }}"{% endif %}
-     {% if perms.base.can_localize %}data-localizer="true"{% endif %}
-     {% if perms.base.can_manage %}data-manager="true"{% endif %}
-     >
+     data-locale="{{ locale.stringify() }}"
+     data-project="{{ project.as_json() }}">
 </div>
 
 <!-- Main toolbar -->
@@ -197,153 +186,15 @@
   </div>
 </header>
 
-<aside id="sidebar">
-  <!-- Strings placeholder -->
-  <div id="entitylist">
-    <div class="search-wrapper clearfix">
-      <div class="icon fa fa-search"></div>
-      <input id="search" type="search" placeholder="Search">
-      <div id="filter" class="select">
-        <div class="button selector all">
-          <span class="status fa"></span>
-          <span class="title">All</span>
-        </div>
-        <div class="menu">
-          <ul>
-            <li class="all"><span class="status fa"></span>All</li>
-            <li class="untranslated"><span class="status fa"></span>Untranslated</li>
-            <li class="fuzzy"><span class="status fa"></span>Needs work</li>
-            <li class="translated"><span class="status fa"></span>Unapproved</li>
-            <li class="approved"><span class="status fa"></span>Approved</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="wrapper">
-      <ul class="editables"></ul>
-      {% if project.url %}
-      <h2 id="not-on-page">Not on the current page</h2>
-      {% endif %}
-      <ul class="uneditables"></ul>
-      <h3 class="no-match"><div>ఠ_ఠ</div>No results</h3>
-    </div>
-  </div>
-
-  <!-- Translation editor -->
-  <div id="editor">
-    <!-- Element for dragging entity list and editor -->
-    <div id="drag-1" draggable="true"></div>
-
-    <div id="topbar" class="clearfix">
-      <a id="back" href="#back"><span class="fa fa-chevron-left fa-lg"></span>Back to list</a>
-      <a id="next" href="#next"><span class="fa fa-chevron-down fa-lg"></span>Next</a>
-      <a id="previous" href="#previous"><span class="fa fa-chevron-up fa-lg"></span>Previous</a>
-    </div>
-
-    <div id="source-pane">
-        <p id="metadata"></p>
-        <h2></h2>
-        <p id="original"></p>
-    </div>
-
-    <nav id="plural-tabs">
-      <ul>
-        <li class="active"><a href="#plural1">Plural <span></span></a></li>
-        <li><a href="#plural2">Plural <span></span></a></li>
-        <li><a href="#plural3">Plural <span></span></a></li>
-        <li><a href="#plural4">Plural <span></span></a></li>
-        <li><a href="#plural5">Plural <span></span></a></li>
-        <li><a href="#plural6">Plural <span></span></a></li>
-      </ul>
-    </nav>
-    <textarea id="translation" placeholder="Enter translation"></textarea>
-
-    <menu>
-      <div id="unsaved" class="warning-overlay">
-        <a href="#" class="cancel">&times;</a>
-        <h2>You have unsaved changes</h2>
-        <p>Sure you want to leave?</p>
-        <button id="leave-anyway">Leave anyway</button>
-      </div>
-      <div id="quality" class="warning-overlay">
-        <a href="#" class="cancel">&times;</a>
-        <h2>The following checks have failed</h2>
-        <ul></ul>
-        <button id="save-anyway">Save anyway</button>
-      </div>
-      <div id="translation-length">
-        <span class="current-length"></span>|<span class="original-length"></span>
-      </div>
-      <button id="copy">Copy</button>
-      <button id="clear">Clear</button>
-      <button id="cancel">Cancel</button>
-      <button id="save">Save</button>
-    </menu>
-
-    <div id="helpers">
-      <nav>
-        <ul>
-          <li class="active"><a href="#history"><span>History<span class="fa fa-cog fa-lg fa-spin"></span></a></span></li>
-          <li><a href="#machinery"><span>Machinery<span class="fa fa-cog fa-lg fa-spin"></span></a></span></li>
-          <li><a href="#other-locales"><span>Locales<span class="fa fa-cog fa-lg fa-spin"></span></a></span></li>
-          <li><a href="#custom-search"><span>Search<span class="fa fa-cog fa-lg fa-spin"></span></a></span></li>
-        </ul>
-      </nav>
-
-      <section id="history">
-        <ul></ul>
-      </section>
-
-      <section id="machinery">
-        <ul></ul>
-      </section>
-
-      <section id="other-locales">
-        <ul></ul>
-      </section>
-
-      <section id="custom-search">
-        <div class="search-wrapper clearfix">
-          <div class="icon fa fa-search"></div>
-          <div class="icon fa fa-cog fa-spin"></div>
-          <input type="search" autocomplete="off" placeholder="Type and press Enter to search">
-        </div>
-        <ul></ul>
-      </section>
-    </div>
-  </div>
-
-  <!-- Element for dragging sidebar -->
-  <div id="drag" draggable="true"></div>
-</aside>
-
-{% if project.url %}
-<!-- Website placeholder + iframe fix: prevent iframes from capturing the mousemove events during a drag -->
-<iframe id="source"></iframe>
-<div id="iframe-cover"></div>
-{% endif %}
-
-<!-- Project loading indicator -->
-<div id="project-load">
-  <div class="inner">
-    <div class="animation">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-    <div class="text">"640K ought to be enough for anybody."</div>
-  </div>
-</div>
+<div id="translation-editor-container"></div>
 {% endblock %}
 
 {% block extend_css %}
-  {% stylesheet 'translate' %}
+  {% stylesheet 'translate_new' %}
 {% endblock %}
 
 {% block extend_js %}
-  {% javascript 'translate' %}
+  {% javascript 'translate_new' %}
 
   <script src="https://login.persona.org/include.js"></script>
 {% endblock %}

@@ -490,11 +490,11 @@ body > header aside p {
   background: #3F4752;
   border-right: 1px solid #5E6475;
   bottom: 0;
-  display: none;
+  /* display: none; Temporary until iframe is added back */
   overflow: hidden;
   position: fixed;
   top: 60px;
-  width: 350px;
+  width: 100%; /* 350px; Temporary until iframe is added back. */
 
   -moz-box-sizing: border-box;
   box-sizing: border-box;

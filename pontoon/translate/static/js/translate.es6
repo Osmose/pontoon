@@ -1,4 +1,27 @@
 /**
+ * Simple dispatcher to make triggering actions within the tree of
+ * components easier.
+ */
+let Dispatcher = {
+  actions: {},
+
+  register: function(action, handler) {
+    if (!(action in this.actions)) {
+      this.actions[action] = [];
+    }
+
+    this.actions[action].push(handler);
+  },
+
+  dispatch: function(action) {
+    let handlerArguments = Array.from(arguments).slice(1);
+    for (let handler of this.actions[action]) {
+      handler.apply(undefined, handlerArguments);
+    }
+  }
+}
+
+/**
  * Model for Entities, which represent a single string to be translated.
  */
 class Entity {
@@ -51,6 +74,19 @@ class Entity {
  * Base class for React Components.
  */
 class PontoonComponent extends React.Component {
+  constructor(props) {
+    super(props);
+
+    // Functions returned by this.handlers are auto-registered with the
+    // Dispatcher.
+    if (this.handlers) {
+      let handlers = this.handlers();
+      for (let action in handlers) {
+        Dispatcher.register(action, handlers[action].bind(this));
+      }
+    }
+  }
+
   /** Shorthand for getting a jQuery object for a ref. */
   $ref(refName) {
     return $(React.findDOMNode(this.refs[refName]));
@@ -128,9 +164,11 @@ class TranslationEditor extends PontoonComponent {
     );
   }
 
-  toggleSidebar() {
-    this.$ref('sidebar').toggle();
-  }
+  handlers() {return {
+    toggleSidebar() {
+      this.$ref('sidebar').toggle();
+    }
+  }}
 }
 
 
@@ -236,6 +274,11 @@ class EntityItem extends PontoonComponent {
 }
 
 
+/**
+ *
+ */
+
+
 /* Main code */
 $(function() {
   let $server = $('#server');
@@ -255,6 +298,6 @@ $(function() {
     e.preventDefault();
 
     $(e.target).toggleClass('opened');
-    editor.toggleSidebar();
+    Dispatcher.dispatch('toggleSidebar');
   });
 });

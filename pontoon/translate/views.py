@@ -23,7 +23,11 @@ def entities(request, project_slug, locale):
     entities = Entity.objects.filter(resource__project=project)
     data = [{
         'pk': entity.pk,
+        'string': entity.string,
         'marked': entity.marked,
+        'key': entity.key,
+        'path': entity.resource.path,
+        'comment': entity.comment,
         'translations': [translation.serialize() for translation in
                          entity.translation_set.filter(locale=locale)],
     } for entity in entities]

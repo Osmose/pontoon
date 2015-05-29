@@ -13,12 +13,20 @@ let Dispatcher = {
     this.actions[action].push(handler);
   },
 
-  dispatch: function(action) {
-    let handlerArguments = Array.from(arguments).slice(1);
-    for (let handler of this.actions[action]) {
-      handler.apply(undefined, handlerArguments);
+  dispatch: function(action, ...args) {
+    let handlers = this.actions[action] || [];
+    for (let handler of handlers) {
+      handler(...args);
     }
   }
+}
+
+/** Shorthand for dispatching actions in JSX event attributes. */
+function dispatch(...args) {
+  return (e) => {
+    e.preventDefault();
+    Dispatcher.dispatch(...args);
+  };
 }
 
 /**
@@ -33,7 +41,7 @@ class Entity {
    * Return the first approved translation in this.translations, or null
    * if there are none.
    */
-  get approved_translation() {
+  get approvedTranslation() {
     for (let translation of this.translations) {
       if (translation.approved) {
         return translation;
@@ -47,7 +55,7 @@ class Entity {
    * Return the current translation status.
    */
   get status() {
-    if (this.approved_translation) {
+    if (this.approvedTranslation) {
       return 'approved';
     } else if (this.translations.some((t) => t.fuzzy)) {
       return 'fuzzy'
@@ -103,7 +111,7 @@ class TranslationEditor extends PontoonComponent {
     this.state = {
       loaded: false,
       entities: [],
-      selectedEntity: {},
+      selectedIndex: 0,
     };
   }
 
@@ -112,7 +120,6 @@ class TranslationEditor extends PontoonComponent {
       this.setState({
         loaded: true,
         entities: entities,
-        selectedEntity: {},
       });
     });
   }
@@ -124,8 +131,12 @@ class TranslationEditor extends PontoonComponent {
 
     return (
       <div id="translation-editor">
-        <aside id="sidebar" ref="sidebar">
-          <EntityList entities={this.state.entities} project={this.props.project} />
+        <aside id="sidebar" className="advanced" ref="sidebar">
+          <EntityList entities={this.state.entities}
+                      project={this.props.project}
+                      selectedIndex={this.state.selectedIndex} />
+          <EntityEditor entities={this.state.entities}
+                        selectedIndex={this.state.selectedIndex} />
           <div id="drag" draggable="true"></div>
         </aside>
       </div>
@@ -167,7 +178,32 @@ class TranslationEditor extends PontoonComponent {
   handlers() {return {
     toggleSidebar() {
       this.$ref('sidebar').toggle();
-    }
+    },
+
+    selectEntity(entityKey) {
+      let index = this.state.entities.findIndex((e) => e.pk === entityKey);
+      if (index !== -1) {
+        this.setState({
+          selectedIndex: index,
+        });
+      }
+    },
+
+    selectNextEntity() {
+      if (this.state.selectedIndex < this.state.entities.length - 1) {
+        this.setState({
+          selectedIndex: this.state.selectedIndex + 1,
+        });
+      }
+    },
+
+    selectPreviousEntity() {
+      if (this.state.selectedIndex > 0) {
+        this.setState({
+          selectedIndex: this.state.selectedIndex - 1,
+        });
+      }
+    },
   }}
 }
 
@@ -177,12 +213,18 @@ class TranslationEditor extends PontoonComponent {
  */
 class EntityList extends PontoonComponent {
   render() {
-    let entities = this.props.entities;
     let listBody = <h3 className="no-match"><div>ఠ_ఠ</div>No results</h3>;
 
-    if (entities.length > 1) {
-      let editableEntities = entities.filter(entity => entity.body);
-      let uneditableEntities = entities.filter(entity => !entity.body);
+    if (this.props.entities.length > 0) {
+      let entities = [];
+      for (let k = 0; k < this.props.entities.length; k++) {
+        let entity = this.props.entities[k];
+        let selected = k == this.props.selectedIndex;
+
+        entities.push(
+          <EntityItem key={entity.pk} entity={entity} selected={selected} />
+        );
+      }
 
       // Only show page mesage if we're showing an iframe.
       let notOnPageMessage = '';
@@ -193,12 +235,10 @@ class EntityList extends PontoonComponent {
       listBody = (
         <div className="wrapper">
           <ul className="editables">
-            {editableEntities.map(EntityItem.fromEntity)}
+            {entities}
           </ul>
           {notOnPageMessage}
-          <ul className="uneditables">
-            {uneditableEntities.map(EntityItem.fromEntity)}
-          </ul>
+          <ul className="uneditables"></ul>
         </div>
       );
     }
@@ -247,21 +287,21 @@ class EntitySearch extends PontoonComponent {
  * Individual entity in the sidebar list.
  */
 class EntityItem extends PontoonComponent {
-  static fromEntity(entity) {
-    return <EntityItem key={entity.pk} entity={entity} />;
-  }
-
   render() {
     let entity = this.props.entity;
     let translationString = '';
-    if (entity.approved_translation) {
-      translationString = entity.approved_translation.string;
+    if (entity.approvedTranslation) {
+      translationString = entity.approvedTranslation.string;
     } else if (entity.translations.length > 0) {
       translationString = entity.translations[0].string;
     }
 
+    let liClassname = classNames('entity', 'limited', entity.status, {
+      'hovered': this.props.selected
+    })
     return (
-      <li className={classNames('entity', 'limited', entity.status)}>
+      <li className={liClassname}
+          onClick={dispatch('selectEntity', entity.pk)}>
         <span className="status fa"></span>
         <p className="string-wrapper">
           <span className="source-string">{entity.marked}</span>
@@ -275,8 +315,128 @@ class EntityItem extends PontoonComponent {
 
 
 /**
- *
+ * Editor for individual Entities.
  */
+class EntityEditor extends PontoonComponent {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      'showAll': false
+    };
+  }
+
+  render() {
+    let entity = this.selectedEntity;
+    return (
+      <div id="editor">
+        <div id="drag-1" draggable="true"></div>
+
+        <div id="topbar" className="clearfix">
+          <a id="back" href="#back">
+            <span className="fa fa-chevron-left fa-lg"></span>
+            Back to list
+          </a>
+          <a id="next" href="#next" onClick={dispatch('selectNextEntity')}>
+            <span className="fa fa-chevron-down fa-lg"></span>
+            Next
+          </a>
+          <a id="previous" href="#previous" onClick={dispatch('selectPreviousEntity')}>
+            <span className="fa fa-chevron-up fa-lg"></span>
+            Previous
+          </a>
+        </div>
+
+        <div id="source-pane">
+            {this.metadata()}
+            <p id="original">{entity.marked}</p>
+        </div>
+
+        <textarea id="translation"
+                  placeholder="Enter translation"
+                  defaultValue="">
+        </textarea>
+
+        <menu>
+          <div id="translation-length">
+            0 / {entity.string.length}
+          </div>
+          <button id="copy">Copy</button>
+          <button id="clear">Clear</button>
+          <button id="cancel">Cancel</button>
+          <button id="save">Save</button>
+        </menu>
+      </div>
+    );
+  }
+
+  metadata() {
+    let metadata = [];
+    let entity = this.selectedEntity;
+
+    if (entity.comment) {
+      metadata.push(<span id="comment">{entity.comment}</span>);
+    }
+
+    if (entity.source || entity.path || entity.key) {
+      if (this.state.showAll) {
+        metadata.push(
+          <a href="#" className="details" onClick={dispatch('showLessMetadata')}>
+            Less details
+          </a>
+        );
+      } else {
+        metadata.push(
+          <a href="#" className="details" onClick={dispatch('showMoreMetadata')}>
+            More details
+          </a>
+        );
+      }
+    }
+
+    if (entity.source) {
+      if (typeof(entity.source) === 'object') {
+        for (let source of entity.source) {
+          metadata.push(<span>#: {source.join(':')}</span>);
+        }
+      } else {
+        metadata.push(<span>{entity.source}</span>);
+      }
+    }
+
+    if (entity.path) {
+      metadata.push(<span>{entity.path}</span>);
+    }
+
+    if (entity.key) {
+      metadata.push(<span>Key: {entity.key}</span>);
+    }
+
+    return (
+      <p id="metadata" className={classNames({'show-all': this.state.showAll})} ref="metadata">
+        {metadata}
+      </p>
+    );
+  }
+
+  get selectedEntity() {
+    return this.props.entities[this.props.selectedIndex];
+  }
+
+  handlers() {return {
+    showMoreMetadata() {
+      this.setState({
+        'showAll': true,
+      });
+    },
+
+    showLessMetadata() {
+      this.setState({
+        'showAll': false,
+      });
+    },
+  }}
+}
 
 
 /* Main code */

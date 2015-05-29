@@ -494,7 +494,7 @@ body > header aside p {
   overflow: hidden;
   position: fixed;
   top: 60px;
-  width: 100%; /* 350px; Temporary until iframe is added back. */
+  width: 350px;
 
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -502,7 +502,7 @@ body > header aside p {
 
 #sidebar.advanced {
   display: block;
-  width: 700px;
+  width: 100%; /* 700px; Temporary until iframe is added back. */
 }
 
 #sidebar [id^="drag"] {
@@ -805,13 +805,16 @@ body > header aside p {
 
 #metadata {
   color: #AAAAAA;
-  display: none;
   font-size: 12px;
   font-style: italic;
 }
 
 #metadata span {
   display: none;
+}
+
+#metadata.show-all span {
+  display: block;
 }
 
 #metadata #comment {
@@ -973,7 +976,6 @@ body > header aside p {
 
 #translation-length {
   color: #AAAAAA;
-  display: none;
   float: left;
   line-height: 22px;
   padding: 9px 0;

@@ -136,7 +136,8 @@ class TranslationEditor extends PontoonComponent {
                       project={this.props.project}
                       selectedIndex={this.state.selectedIndex} />
           <EntityEditor entities={this.state.entities}
-                        selectedIndex={this.state.selectedIndex} />
+                        selectedIndex={this.state.selectedIndex}
+                        user={this.props.user} />
           <div id="drag" draggable="true"></div>
         </aside>
       </div>
@@ -367,7 +368,7 @@ class EntityEditor extends PontoonComponent {
           <button id="save">Save</button>
         </menu>
 
-        <EditorHelpers entity={entity} />
+        <EditorHelpers entity={entity} user={this.props.user} />
       </div>
     );
   }
@@ -470,7 +471,8 @@ class EditorHelpers extends PontoonComponent {
         </nav>
 
         <HelperContent id="history" activeTab={this.state.activeTab}>
-          <EntityHistoryList />
+          <EntityHistoryList translations={this.props.entity.translations}
+                             user={this.props.user} />
         </HelperContent>
       </div>
     )
@@ -519,18 +521,83 @@ class HelperContent extends PontoonComponent {
 
 
 class EntityHistoryList extends PontoonComponent {
-  constructor(props) {
-    super(props)
-    this.state = {history: []};
-  }
-
   render() {
+    let historyItems = [];
+    if (this.props.translations.length < 1) {
+      historyItems.push(
+        <li className="disabled"><p>No translations available.</p></li>
+      )
+    } else {
+      historyItems = this.props.translations.map(translation => (
+        <EntityHistoryItem key={translation.id} translation={translation} user={this.props.user}></EntityHistoryItem>
+      ));
+    }
+
     return (
-      <ul></ul>
+      <ul>
+        {historyItems}
+      </ul>
     );
   }
 }
 
+
+class EntityHistoryItem extends PontoonComponent {
+  render() {
+    let translation = this.props.translation;
+    return (
+      <li data-id={translation.id}
+          className={classNames({approved: translation.approved})}
+          title="Click to copy">
+        <header className={classNames('clearfix', this.headerClass())}>
+          <div className="info">
+            {this.localizerName()}
+            <time className="stress" dateTime={translation.date_iso}>{translation.date}</time>
+          </div>
+          <menu className="toolbar">
+            <button className="approve fa" title={this.approveTitle()}></button>
+            <button className="delete fa" title="Delete"></button>
+          </menu>
+        </header>
+        <p className="translation">
+          {translation.string}
+        </p>
+      </li>
+    );
+  }
+
+  headerClass() {
+    let translation = this.props.translation;
+    if (this.props.user.can_translate) {
+      return 'localizer';
+    } else if (this.props.user.email == translation.user.email && !translation.approved) {
+      return 'own'
+    } else {
+      return '';
+    }
+  }
+
+  localizerName() {
+    let translation = this.props.translation;
+    if (translation.user.email) {
+      let href = 'contributors/' + translation.user.email;
+      return <a href={href}>{translation.user.name}</a>;
+    } else {
+      return translation.user.name;
+    }
+  }
+
+  approveTitle() {
+    let translation = this.props.translation;
+    if (!translation.approved) {
+      return 'Approved';
+    } else if (translation.approved_user) {
+      return 'Approved by '+ translation.approved_user;
+    } else {
+      return '';
+    }
+  }
+}
 
 
 /* Main code */
@@ -538,9 +605,10 @@ $(function() {
   let $server = $('#server');
   let project = $server.data('project');
   let locale = $server.data('locale');
+  let user = $server.data('user');
 
   let editor = React.render(
-    <TranslationEditor project={project} locale={locale} />,
+    <TranslationEditor project={project} locale={locale} user={user} />,
     document.getElementById('translation-editor-container')
   );
 

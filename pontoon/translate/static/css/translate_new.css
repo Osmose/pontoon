@@ -879,7 +879,7 @@ body > header aside p {
   text-transform: uppercase;
 }
 
-#editor nav li a > span > span {
+#editor nav li a .spinner {
   left: 0px;
   position: absolute;
   right: 0px;
@@ -888,7 +888,7 @@ body > header aside p {
   visibility: hidden;
 }
 
-#editor nav li a.loading > span > span {
+#editor nav li a.loading .spinner {
   visibility: visible;
 }
 
@@ -1024,6 +1024,14 @@ body > header aside p {
   background: #3F4752;
   height: calc(60% - 104px);
   position: relative;
+}
+
+#helpers .helper-content {
+  display: none;
+}
+
+#helpers .helper-content.active {
+  display: block;
 }
 
 #source-pane.pluralized ~ #helpers {

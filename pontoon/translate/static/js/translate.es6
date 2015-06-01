@@ -366,6 +366,8 @@ class EntityEditor extends PontoonComponent {
           <button id="cancel">Cancel</button>
           <button id="save">Save</button>
         </menu>
+
+        <EditorHelpers entity={entity} />
       </div>
     );
   }
@@ -381,13 +383,13 @@ class EntityEditor extends PontoonComponent {
     if (entity.source || entity.path || entity.key) {
       if (this.state.showAll) {
         metadata.push(
-          <a href="#" className="details" onClick={dispatch('showLessMetadata')}>
+          <a href="#" className="details" onClick={dispatch('showMetadata', false)}>
             Less details
           </a>
         );
       } else {
         metadata.push(
-          <a href="#" className="details" onClick={dispatch('showMoreMetadata')}>
+          <a href="#" className="details" onClick={dispatch('showMetadata', true)}>
             More details
           </a>
         );
@@ -424,19 +426,111 @@ class EntityEditor extends PontoonComponent {
   }
 
   handlers() {return {
-    showMoreMetadata() {
+    showMetadata(showAll) {
       this.setState({
-        'showAll': true,
-      });
-    },
-
-    showLessMetadata() {
-      this.setState({
-        'showAll': false,
+        'showAll': showAll,
       });
     },
   }}
 }
+
+
+/**
+ * Tabs at the bottom of the editor containing helper components.
+ */
+class EditorHelpers extends PontoonComponent {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      activeTab: 'history',
+    };
+  }
+
+  render() {
+    let entity = this.props.entity;
+
+    return (
+      <div id="helpers" ref="helpers">
+        <nav>
+          <ul>
+            <HelperTab id="history" activeTab={this.state.activeTab}>
+              History
+            </HelperTab>
+            <HelperTab id="machinery" activeTab={this.state.activeTab}>
+              Machinery
+            </HelperTab>
+            <HelperTab id="otherLocales" activeTab={this.state.activeTab}>
+              Locales
+            </HelperTab>
+            <HelperTab id="machinerySearch" activeTab={this.state.activeTab}>
+              Search
+            </HelperTab>
+          </ul>
+        </nav>
+
+        <HelperContent id="history" activeTab={this.state.activeTab}>
+          <EntityHistoryList />
+        </HelperContent>
+      </div>
+    )
+  }
+
+  handlers() {return {
+    openHelper(id) {
+      this.setState({
+        activeTab: id,
+      });
+    },
+  }}
+}
+
+
+class HelperTab extends PontoonComponent {
+  render() {
+    let id = this.props.id;
+    return (
+      <li className={classNames({'active': this.props.activeTab == id})}>
+        <a href={`#${id}`} onClick={dispatch('openHelper', id)}>
+          <span>
+            {this.props.children}
+            <span className="fa fa-cog fa-lg fa-spin spinner"></span>
+          </span>
+        </a>
+      </li>
+    );
+  }
+}
+
+
+class HelperContent extends PontoonComponent {
+  render() {
+    let className = classNames('helper-content', {
+      'active': this.props.activeTab == this.props.id
+    });
+
+    return (
+      <section className={className}>
+        {this.props.children}
+      </section>
+    )
+  }
+}
+
+
+class EntityHistoryList extends PontoonComponent {
+  constructor(props) {
+    super(props)
+    this.state = {history: []};
+  }
+
+  render() {
+    return (
+      <ul></ul>
+    );
+  }
+}
+
 
 
 /* Main code */

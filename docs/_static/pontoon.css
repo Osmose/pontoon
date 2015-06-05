@@ -1,0 +1,124 @@
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Light.1112689d3396.eot");
+  src: local('Open Sans Light'),
+    local('OpenSans-Light'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Light.1112689d3396.eot") format('embedded-opentype'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Light.c335fd209bd0.woff") format('woff'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Light.1bf71be11118.ttf") format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Bold.36bf3ad037bd.eot");
+  src: local('Open Sans Bold'),
+    local('OpenSans-Bold'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Bold.36bf3ad037bd.eot") format('embedded-opentype'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Bold.ad90b651940b.woff") format('woff'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Bold.50145685042b.ttf") format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Regular.77ff7c7f933f.eot");
+  src: local('Open Sans'),
+    local('OpenSans'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Regular.77ff7c7f933f.eot") format('embedded-opentype'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Regular.690d5f0d3cf3.woff") format('woff'),
+    url("https://mozorg.cdn.mozilla.net/fonts/OpenSans-Regular.629a55a7e793.ttf") format('truetype');
+}
+
+body {
+    color: #EBEBEB;
+    font-family: "Open Sans","Lucida Sans","Lucida Grande","Lucida Sans Unicode",Verdana,sans-serif;
+}
+
+.wy-body-for-nav,
+.wy-nav-side,
+.wy-nav-content-wrap {
+  background: #272A2F;
+}
+
+.wy-nav-content {
+  background: #3F4752;
+}
+
+.wy-nav-side {
+  overflow-y: auto;
+}
+
+.wy-side-nav-search {
+  background:  #7BC876;
+}
+
+.wy-side-nav-search input[type="text"] {
+  border-radius: 0;
+}
+
+.wy-side-nav-search > a,
+.wy-side-nav-search > a:hover,
+.wy-side-nav-search > a:visited {
+  color: #EBEBEB;
+  font-family: "Open Sans","Lucida Sans","Lucida Grande","Lucida Sans Unicode",Verdana,sans-serif;
+  font-weight: 300;
+  font-size: 2.4em;
+  margin-bottom: 0.2em;
+}
+
+a,
+a:hover,
+a:visited {
+  color: #7BC876;
+}
+
+.wy-menu-vertical a {
+  color: #7BC876;
+}
+
+.wy-menu-vertical a:hover {
+  background: #3F4752;
+}
+
+.wy-menu-vertical li.current > a {
+  color: #EBEBEB;
+  background: #4D5967;
+  border: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Open Sans","Lucida Sans","Lucida Grande","Lucida Sans Unicode",Verdana,sans-serif;
+  font-weight: 300;
+}
+
+.btn,
+.btn:hover,
+.btn:visited,
+.btn-neutral,
+.btn-neutral:hover
+.btn-neutral:visited {
+  color: #EBEBEB !important;
+  background-color: #4D5967 !important;
+  border: 1px solid #5E6475;
+  box-shadow: none;
+  font-family: "Open Sans","Lucida Sans","Lucida Grande","Lucida Sans Unicode",Verdana,sans-serif;
+}
+
+.btn:hover,
+.btn-neutral:hover {
+  color: #7BC876 !important;
+}
+
+form input[type="text"] {
+  font-family: "Open Sans","Lucida Sans","Lucida Grande","Lucida Sans Unicode",Verdana,sans-serif;
+}

@@ -137,7 +137,8 @@ class TranslationEditor extends PontoonComponent {
                       selectedIndex={this.state.selectedIndex} />
           <EntityEditor entities={this.state.entities}
                         selectedIndex={this.state.selectedIndex}
-                        user={this.props.user} />
+                        user={this.props.user}
+                        locale={this.props.locale} />
           <div id="drag" draggable="true"></div>
         </aside>
       </div>
@@ -368,7 +369,9 @@ class EntityEditor extends PontoonComponent {
           <button id="save">Save</button>
         </menu>
 
-        <EditorHelpers entity={entity} user={this.props.user} />
+        <EditorHelpers entity={entity}
+                       user={this.props.user}
+                       locale={this.props.locale} />
       </div>
     );
   }
@@ -455,24 +458,30 @@ class EditorHelpers extends PontoonComponent {
       <div id="helpers" ref="helpers">
         <nav>
           <ul>
-            <HelperTab id="history" activeTab={this.state.activeTab}>
+            <HelperTab id="history"
+                       activeTab={this.state.activeTab}>
               History
             </HelperTab>
-            <HelperTab id="machinery" activeTab={this.state.activeTab}>
+            <HelperTab id="machinery"
+                       activeTab={this.state.activeTab}>
               Machinery
             </HelperTab>
-            <HelperTab id="otherLocales" activeTab={this.state.activeTab}>
+            <HelperTab id="otherLocales"
+                       activeTab={this.state.activeTab}>
               Locales
             </HelperTab>
-            <HelperTab id="machinerySearch" activeTab={this.state.activeTab}>
+            <HelperTab id="machinerySearch"
+                       activeTab={this.state.activeTab}>
               Search
             </HelperTab>
           </ul>
         </nav>
-
         <HelperContent id="history" activeTab={this.state.activeTab}>
-          <EntityHistoryList translations={this.props.entity.translations}
+          <EntityHistoryList translations={entity.translations}
                              user={this.props.user} />
+        </HelperContent>
+        <HelperContent id="machinery" activeTab={this.state.activeTab}>
+          <MachineTranslationList entity={entity} locale={this.props.locale} />
         </HelperContent>
       </div>
     )
@@ -491,16 +500,20 @@ class EditorHelpers extends PontoonComponent {
 class HelperTab extends PontoonComponent {
   render() {
     let id = this.props.id;
+
     return (
-      <li className={classNames({'active': this.props.activeTab == id})}>
+      <li className={classNames({'active': this.isActive()})}>
         <a href={`#${id}`} onClick={dispatch('openHelper', id)}>
           <span>
             {this.props.children}
-            <span className="fa fa-cog fa-lg fa-spin spinner"></span>
           </span>
         </a>
       </li>
     );
+  }
+
+  isActive() {
+    return this.props.activeTab == this.props.id;
   }
 }
 
@@ -529,7 +542,9 @@ class EntityHistoryList extends PontoonComponent {
       )
     } else {
       historyItems = this.props.translations.map(translation => (
-        <EntityHistoryItem key={translation.id} translation={translation} user={this.props.user}></EntityHistoryItem>
+        <EntityHistoryItem key={translation.id}
+                           translation={translation}
+                           user={this.props.user} />
       ));
     }
 
@@ -596,6 +611,203 @@ class EntityHistoryItem extends PontoonComponent {
     } else {
       return '';
     }
+  }
+}
+
+
+class MachineTranslationList extends PontoonComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      translations: [],
+    };
+  }
+
+  render() {
+    let translationItems = [];
+    if (this.state.translations.length < 1) {
+      translationItems.push(
+        <li className="disabled"><p>No translations available.</p></li>
+      );
+    } else {
+      for (let translation of this.state.translations) {
+        translationItems.push(
+          <MachineTranslationItem {...translation} />
+        );
+      }
+    }
+
+    return (
+      <ul>{translationItems}</ul>
+    );
+  }
+
+  componentWillReceiveProps(nextProps) {
+    let {entity, locale, active} = nextProps;
+    if (entity.pk != this.props.entity.pk) {
+      this.setState({
+        translations: [],
+      });
+    }
+
+    let append = this.appendTranslations.bind(this);
+    let translationGetters = [
+      this.getFromTranslationMemory,
+      this.getFromMicrosoftTerminology,
+      this.getFromAmaGama,
+      this.getFromAuroraTransvision,
+      this.getFromGaiaTransvision,
+      this.getFromMozOrgTransvision,
+    ];
+
+    for (let getTranslation of translationGetters) {
+      getTranslation.bind(this)(entity, locale).then(append);
+    }
+  }
+
+  appendTranslations(translations) {
+    this.setState((state, props) => ({
+      translations: state.translations.concat(translations),
+    }));
+  }
+
+  getFromTranslationMemory(entity, locale) {
+    return $.get('translation-memory/', {
+      text: entity.string,
+      locale: locale.code,
+      pk: entity.pk,
+    }).then((data) => {
+      let deferred = $.Deferred();
+
+      if (data.translations) {
+        deferred.resolve(data.translations.map((t) => ({
+          original: t.source,
+          quality: `${Math.round(t.quality)}%`,
+          url: '/',
+          title: 'Pontoon Homepage',
+          source: 'Translation memory',
+          translation: t.target,
+          count: t.count,
+        })));
+      } else {
+        deferred.reject()
+      }
+
+      return deferred.promise();
+    });
+  }
+
+  getFromMicrosoftTerminology(entity, locale) {
+    return $.get('microsoft-terminology/', {
+      text: entity.string,
+      locale: locale.code,
+      check: true,
+    }).then((data) => {
+      let deferred = $.Deferred();
+
+      if (data.translations) {
+        deferred.resolve(data.translations.map((t) => ({
+          original: t.source,
+          quality: `${Math.round(t.quality)}%`,
+          url: 'http://www.microsoft.com/Language/',
+          title: 'Visit Microsoft Terminology Service API.\n' +
+                 '© 2014 Microsoft Corporation. All rights reserved.',
+          source: 'Microsoft',
+          translation: t.target,
+        })));
+      } else {
+        deferred.reject();
+      }
+
+      return deferred.promise();
+    });
+  }
+
+  getFromAmaGama(entity, locale) {
+    return $.get('amagama/', {
+      text: entity.string,
+      locale: locale.code,
+    }).then((data) => {
+      let deferred = $.Deferred();
+
+      if (data.translations) {
+        deferred.resolve(data.translations.map((t) => ({
+          original: t.source,
+          quality: `${Math.round(t.quality)}%`,
+          url: 'http://amagama.translatehouse.org/',
+          title: 'Visit amaGama',
+          source: 'Open Source',
+          translation: t.target,
+        })));
+      } else {
+        deferred.reject();
+      }
+
+      return deferred.promise();
+    });
+  }
+
+  getFromTransvision(repo, entity, locale) {
+    return $.get(`transvision-${repo}/`, {
+      text: entity.string,
+      locale: locale.code,
+    }).then((data) => {
+      let deferred = $.Deferred();
+
+      if (data.translations && !data.translations.error) {
+        deferred.resolve(data.translations.map((t) => ({
+          original: t.source,
+          quality: `${Math.round(t.quality)}%`,
+          url: 'http://transvision.mozfr.org/',
+          title: 'Visit Transvision',
+          source: data.title,
+          translation: t.target,
+        })));
+      } else {
+        deferred.reject();
+      }
+
+      return deferred.promise();
+    });
+  }
+
+  getFromAuroraTransvision(entity, locale) {
+    return this.getFromTransvision('aurora', entity, locale);
+  }
+
+  getFromGaiaTransvision(entity, locale) {
+    return this.getFromTransvision('gaia', entity, locale);
+  }
+
+  getFromMozOrgTransvision(entity, locale) {
+    return this.getFromTransvision('mozilla-org', entity, locale);
+  }
+}
+
+
+class MachineTranslationItem extends PontoonComponent {
+  render() {
+    let metadata = [this.props.quality];
+    if (this.props.count) {
+      metadata.push(
+        String.fromCharCode(8226),
+        <span>#</span>,
+        this.props.count
+      );
+    }
+
+    return (
+      <li title="Click to copy">
+        <header>
+          <span className="stress">{metadata}</span>
+          <a href={this.props.url} target="_blank" title={this.props.title}>
+            {this.props.source}
+          </a>
+        </header>
+        <p className="original">{this.props.original}</p>
+        <p className="translation">{this.props.translation}</p>
+      </li>
+    );
   }
 }
 

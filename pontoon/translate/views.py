@@ -58,3 +58,19 @@ def entities(request, project_slug, locale):
     } for entity in entities]
 
     return JsonResponse(data, safe=False)
+
+
+def translations(request, entity_pk):
+    """Return all translations for the given entity."""
+    entity = get_object_or_404(Entity.objects.filter(obsolete=False), pk=entity_pk)
+    translations = entity.translation_set.filter(plural_form__isnull=True).select_related('locale')
+
+    data = [{
+        'locale': {
+            'code': translation.locale.code,
+            'name': translation.locale.name,
+        },
+        'translation': translation.string,
+    } for translation in translations]
+
+    return JsonResponse(data, safe=False)

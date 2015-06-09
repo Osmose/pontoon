@@ -10,7 +10,9 @@ urlpatterns = patterns(
     url(r'^project/(?P<project_slug>[\w-]+)/locale/(?P<locale>[A-Za-z0-9\-\@\.]+)/translate/$',
         views.index, name='pontoon.translate.index'),
 
-
     url(r'^project/(?P<project_slug>[\w-]+)/locale/(?P<locale>[A-Za-z0-9\-\@\.]+)/entities/$',
         views.entities, name='pontoon.translate.entities'),
+
+    url(r'^entity/(?P<entity_pk>[0-9]+)/translations/$',
+        views.translations, name='pontoon.translate.translations'),
 )

@@ -812,6 +812,43 @@ class MachineTranslationItem extends PontoonComponent {
 }
 
 
+class LocaleTranslationList extends PontoonComponent {
+  render() {
+    let translationItems = [];
+    if (this.state.translations.length < 1) {
+      translationItems.push(
+        <li className="disabled"><p>No translations available.</p></li>
+      );
+    } else {
+      for (let translation of this.state.translations) {
+        translationItems.push(
+          <LocaleTranslationItem {...translation} />
+        );
+      }
+    }
+
+    return (
+      <ul>{translationItems}</ul>
+    )
+  }
+}
+
+
+class LocaleTranslationItem extends PontoonComponent {
+  render() {
+    return (
+      <li title="Click to copy">
+        <header>
+          {this.props.locale.name}
+          <span className="stress">{this.props.locale.code}</span>
+        </header>
+        <p className="translation">{this.props.translation}</p>
+      </li>
+    )
+  }
+}
+
+
 /* Main code */
 $(function() {
   let $server = $('#server');
